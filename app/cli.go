@@ -34,8 +34,8 @@ func NewRunCommand() *cli.Command {
 		Usage: "Run a backup script",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{Name: "debug", Required: false, Value: false},
-			&cli.StringFlag{Name: "script", Aliases: []string{"s"}, Required: false, Value: AppName + ".yorick.js"},
-			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Required: false, Value: AppName + ".backup"},
+			&cli.StringFlag{Name: "script", Aliases: []string{"s"}, Required: false, Value: ".yorick.js"},
+			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Required: false, Value: ".backup"},
 		},
 		Action: func(ctx *cli.Context) error {
 			debug := ctx.Bool("debug")
