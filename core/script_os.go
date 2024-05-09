@@ -11,10 +11,10 @@ const (
 	RegKeyUserEnv   = `HKEY_CURRENT_USER\Environment`
 )
 
-func (s *ScriptObject) AddHostsFile() {
+func (s *ScriptObject) PutHostsFile() {
 	srcFile := utils.HostsFilePath
 	dstFile := "hosts"
-	s.logger.Infof("AddHostsFile: %s => %s", srcFile, dstFile)
+	s.logger.Infof("PutHostsFile: %s => %s", srcFile, dstFile)
 	dstFile = filepath.Join(s.currentDir, dstFile)
 	err := utils.SafeCopyFile(srcFile, dstFile)
 	if err != nil {

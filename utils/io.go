@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func ResolvePath(path string) (string, error) {
+func ExpandUser(path string) (string, error) {
 	if !strings.HasPrefix(path, "~") {
 		return path, nil
 	}
@@ -14,7 +14,7 @@ func ResolvePath(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	path = dir + strings.TrimPrefix(path, "~")
+	path = dir + path[1:]
 	return path, nil
 }
 
@@ -54,7 +54,7 @@ func MakeParentDir(filePath string) error {
 }
 
 func SafeCopyFile(src, dst string) error {
-	src, err := ResolvePath(src)
+	src, err := ExpandUser(src)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func SafeCopyFile(src, dst string) error {
 }
 
 func SafeCopyDir(src, dst string) error {
-	src, err := ResolvePath(src)
+	src, err := ExpandUser(src)
 	if err != nil {
 		return err
 	}

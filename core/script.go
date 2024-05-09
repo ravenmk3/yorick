@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"yorick/utils"
@@ -84,7 +85,7 @@ func (s *ScriptObject) IsFile(name string) bool {
 func (s *ScriptObject) CopyFile(srcFile, dstFile string) {
 	s.logger.Infof("CopyFile: %s => %s", srcFile, dstFile)
 
-	srcFile, err := utils.ResolvePath(srcFile)
+	srcFile, err := utils.ExpandUser(srcFile)
 	if err != nil {
 		s.logger.Fatal(err)
 	}
@@ -108,7 +109,7 @@ func (s *ScriptObject) CopyFile(srcFile, dstFile string) {
 func (s *ScriptObject) CopyDir(srcDir, dstDir string) {
 	s.logger.Infof("CopyDir: %s => %s", srcDir, dstDir)
 
-	srcDir, err := utils.ResolvePath(srcDir)
+	srcDir, err := utils.ExpandUser(srcDir)
 	if err != nil {
 		s.logger.Fatal(err)
 	}
@@ -130,6 +131,7 @@ func (s *ScriptObject) CopyDir(srcDir, dstDir string) {
 }
 
 func (s *ScriptObject) ExportRegistry(key, dstFile string) {
+	key = strings.ReplaceAll(key, `/`, `\`)
 	s.logger.Infof("ExportRegistry: %s => %s", key, dstFile)
 
 	dstFile = filepath.Join(s.currentDir, dstFile)
