@@ -73,6 +73,24 @@ func (s *ScriptObject) IsDir(name string) bool {
 	return isDir
 }
 
+func (s *ScriptObject) ListDirs(dir string, relative bool, maxDepth int) []string {
+	files, err := utils.ListDirs(dir, relative, maxDepth)
+	if err != nil {
+		s.logger.Warnf("ListDirs: %s", err.Error())
+		return nil
+	}
+	return files
+}
+
+func (s *ScriptObject) ListFiles(dir string, relative bool, maxDepth int) []string {
+	files, err := utils.ListFiles(dir, relative, maxDepth)
+	if err != nil {
+		s.logger.Warnf("ListFiles: %s", err.Error())
+		return nil
+	}
+	return files
+}
+
 func (s *ScriptObject) IsFile(name string) bool {
 	isFile, err := utils.IsFile(name)
 	if err != nil {
