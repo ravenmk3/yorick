@@ -26,7 +26,7 @@ func ExecRunScript(scriptFile, outputDir string) error {
 		return err
 	}
 
-	_, err = vm.Run(core.PresetScript + script)
+	_, err = vm.Run(core.InitScript + script)
 	if err != nil {
 		return err
 	}

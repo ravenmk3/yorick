@@ -3,7 +3,20 @@ package utils
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
+
+func resolvePath(path string) (string, error) {
+	if !strings.HasPrefix(path, "~") {
+		return path, nil
+	}
+	dir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	path = dir + strings.TrimPrefix(path, "~")
+	return path, nil
+}
 
 func CopyFile(src, dst string) error {
 	data, err := os.ReadFile(src)
@@ -19,7 +32,11 @@ func MakeParentDir(filePath string) error {
 }
 
 func SafeCopyFile(src, dst string) error {
-	err := MakeParentDir(dst)
+	src, err := resolvePath(src)
+	if err != nil {
+		return err
+	}
+	err = MakeParentDir(dst)
 	if err != nil {
 		return err
 	}
@@ -27,6 +44,10 @@ func SafeCopyFile(src, dst string) error {
 }
 
 func SafeCopyDir(src, dst string) error {
+	src, err := resolvePath(src)
+	if err != nil {
+		return err
+	}
 	entries, err := os.ReadDir(src)
 	if err != nil {
 		return err
