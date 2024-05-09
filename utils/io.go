@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func resolvePath(path string) (string, error) {
+func ResolvePath(path string) (string, error) {
 	if !strings.HasPrefix(path, "~") {
 		return path, nil
 	}
@@ -16,6 +16,28 @@ func resolvePath(path string) (string, error) {
 	}
 	path = dir + strings.TrimPrefix(path, "~")
 	return path, nil
+}
+
+func IsFile(name string) (bool, error) {
+	info, err := os.Stat(name)
+	if err == nil {
+		return !info.IsDir(), nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
+func IsDir(name string) (bool, error) {
+	info, err := os.Stat(name)
+	if err == nil {
+		return info.IsDir(), nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
 
 func CopyFile(src, dst string) error {
@@ -32,7 +54,7 @@ func MakeParentDir(filePath string) error {
 }
 
 func SafeCopyFile(src, dst string) error {
-	src, err := resolvePath(src)
+	src, err := ResolvePath(src)
 	if err != nil {
 		return err
 	}
@@ -44,7 +66,7 @@ func SafeCopyFile(src, dst string) error {
 }
 
 func SafeCopyDir(src, dst string) error {
-	src, err := resolvePath(src)
+	src, err := ResolvePath(src)
 	if err != nil {
 		return err
 	}

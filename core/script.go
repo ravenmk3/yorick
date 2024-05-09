@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -41,6 +42,10 @@ func (s *ScriptObject) LogError(format string, args ...any) {
 	logrus.Errorf(format, args...)
 }
 
+func (s *ScriptObject) GetEnv(key string) string {
+	return os.Getenv(key)
+}
+
 func (s *ScriptObject) TaskBegin(name string, dir string) {
 	s.taskBegun = true
 	s.taskName = name
@@ -58,10 +63,43 @@ func (s *ScriptObject) DestDir(dir string) {
 	s.logger.Infof("Destination directory: %s", s.currentDir)
 }
 
+func (s *ScriptObject) IsDir(name string) bool {
+	isDir, err := utils.IsDir(name)
+	if err != nil {
+		s.logger.Warnf("IsDir: %s", err.Error())
+		return false
+	}
+	return isDir
+}
+
+func (s *ScriptObject) IsFile(name string) bool {
+	isFile, err := utils.IsFile(name)
+	if err != nil {
+		s.logger.Warnf("IsFile: %s", err.Error())
+		return false
+	}
+	return isFile
+}
+
 func (s *ScriptObject) CopyFile(srcFile, dstFile string) {
 	s.logger.Infof("CopyFile: %s => %s", srcFile, dstFile)
+
+	srcFile, err := utils.ResolvePath(srcFile)
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+
+	isFile, err := utils.IsFile(srcFile)
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+	if !isFile {
+		s.logger.Errorf("Invalid source file: %s", srcFile)
+		return
+	}
+
 	dstFile = filepath.Join(s.currentDir, dstFile)
-	err := utils.SafeCopyFile(srcFile, dstFile)
+	err = utils.SafeCopyFile(srcFile, dstFile)
 	if err != nil {
 		s.logger.Fatal(err)
 	}
@@ -69,8 +107,23 @@ func (s *ScriptObject) CopyFile(srcFile, dstFile string) {
 
 func (s *ScriptObject) CopyDir(srcDir, dstDir string) {
 	s.logger.Infof("CopyDir: %s => %s", srcDir, dstDir)
+
+	srcDir, err := utils.ResolvePath(srcDir)
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+
+	isDir, err := utils.IsDir(srcDir)
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+	if !isDir {
+		s.logger.Errorf("Invalid source dirctory: %s", srcDir)
+		return
+	}
+
 	dstDir = filepath.Join(s.currentDir, dstDir)
-	err := utils.SafeCopyDir(srcDir, dstDir)
+	err = utils.SafeCopyDir(srcDir, dstDir)
 	if err != nil {
 		s.logger.Fatal(err)
 	}
