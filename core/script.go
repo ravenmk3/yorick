@@ -148,6 +148,30 @@ func (s *ScriptObject) CopyDir(srcDir, dstDir string) {
 	}
 }
 
+func (s *ScriptObject) CopyDirEx(srcDir, dstDir string, excludes []string) {
+	s.logger.Infof("CopyDirEx: %s => %s", srcDir, dstDir)
+
+	srcDir, err := utils.ExpandUser(srcDir)
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+
+	isDir, err := utils.IsDir(srcDir)
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+	if !isDir {
+		s.logger.Errorf("Invalid source dirctory: %s", srcDir)
+		return
+	}
+
+	dstDir = filepath.Join(s.currentDir, dstDir)
+	err = utils.SafeCopyDirEx(srcDir, dstDir, excludes)
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+}
+
 func (s *ScriptObject) ExportRegistry(key, dstFile string) {
 	key = strings.ReplaceAll(key, `/`, `\`)
 	s.logger.Infof("ExportRegistry: %s => %s", key, dstFile)

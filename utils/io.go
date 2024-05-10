@@ -3,6 +3,7 @@ package utils
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -93,4 +94,60 @@ func SafeCopyDir(src, dst string) error {
 	}
 
 	return nil
+}
+
+func SafeCopyDirEx(src, dst string, excludes []string) error {
+	files, err := ListFiles(src, true, -1)
+	if err != nil {
+		return err
+	}
+
+	if excludes != nil && len(excludes) > 0 {
+		files, err = filterExcludedFiles(files, excludes)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, file := range files {
+		srcFile := filepath.Join(src, file)
+		dstFile := filepath.Join(dst, file)
+		err := SafeCopyFile(srcFile, dstFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func filterExcludedFiles(files, patterns []string) ([]string, error) {
+	result := []string{}
+	regexps := []*regexp.Regexp{}
+	for _, pattern := range patterns {
+		expr, err := regexp.Compile(pattern)
+		if err != nil {
+			return nil, err
+		}
+		regexps = append(regexps, expr)
+	}
+
+	for _, file := range files {
+		excluded := isFileExcluded(file, regexps)
+		if excluded {
+			continue
+		}
+		result = append(result, file)
+	}
+	return result, nil
+}
+
+func isFileExcluded(file string, regexps []*regexp.Regexp) bool {
+	for _, re := range regexps {
+		matched := re.MatchString(file)
+		if matched {
+			return true
+		}
+	}
+	return false
 }

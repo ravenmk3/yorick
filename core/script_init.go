@@ -17,6 +17,7 @@ var listFiles = Y.ListFiles;
 
 var copyFile = Y.CopyFile;
 var copyDir = Y.CopyDir;
+var copyDirEx = Y.CopyDirEx;
 var exportRegistry = Y.ExportRegistry;
 var exportReg = Y.ExportRegistry;
 
