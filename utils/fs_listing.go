@@ -3,6 +3,7 @@ package utils
 import (
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func ListDirs(dir string, relative bool, maxDepth int) ([]string, error) {
@@ -93,4 +94,33 @@ func listFiles(baseDir, dir string, relative bool, maxDepth, depth int) ([]strin
 		}
 	}
 	return files, nil
+}
+
+func FindLatestFile(dir string, relative bool, maxDepth int) (string, error) {
+	files, err := ListFiles(dir, relative, maxDepth)
+	if err != nil {
+		return "", err
+	}
+
+	latestFile := ""
+	latestTime := time.Time{}
+
+	for _, file := range files {
+		fullPath := file
+		if relative {
+			fullPath = filepath.Join(dir, file)
+		}
+
+		info, err := os.Stat(fullPath)
+		if err != nil {
+			return "", err
+		}
+
+		if info.ModTime().After(latestTime) {
+			latestTime = info.ModTime()
+			latestFile = file
+		}
+	}
+
+	return latestFile, nil
 }

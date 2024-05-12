@@ -14,6 +14,7 @@ import (
 type ScriptObject struct {
 	logger     *logrus.Logger
 	outputDir  string
+	subDir     string
 	currentDir string
 	taskBegun  bool
 	taskName   string
@@ -60,6 +61,7 @@ func (s *ScriptObject) TaskEnd() {
 }
 
 func (s *ScriptObject) DestDir(dir string) {
+	s.subDir = dir
 	s.currentDir = filepath.Join(s.outputDir, dir)
 	s.logger.Infof("Destination directory: %s", s.currentDir)
 }
@@ -71,6 +73,19 @@ func (s *ScriptObject) IsDir(name string) bool {
 		return false
 	}
 	return isDir
+}
+
+func (s *ScriptObject) IsFile(name string) bool {
+	isFile, err := utils.IsFile(name)
+	if err != nil {
+		s.logger.Warnf("IsFile: %s", err.Error())
+		return false
+	}
+	return isFile
+}
+
+func (s *ScriptObject) FileExt(path string) string {
+	return filepath.Ext(path)
 }
 
 func (s *ScriptObject) ListDirs(dir string, relative bool, maxDepth int) []string {
@@ -91,17 +106,17 @@ func (s *ScriptObject) ListFiles(dir string, relative bool, maxDepth int) []stri
 	return files
 }
 
-func (s *ScriptObject) IsFile(name string) bool {
-	isFile, err := utils.IsFile(name)
+func (s *ScriptObject) FindLatestFile(dir string, relative bool, maxDepth int) string {
+	file, err := utils.FindLatestFile(dir, relative, maxDepth)
 	if err != nil {
-		s.logger.Warnf("IsFile: %s", err.Error())
-		return false
+		s.logger.Fatal("FindLatestFile: %s", err.Error())
+		return ""
 	}
-	return isFile
+	return file
 }
 
 func (s *ScriptObject) CopyFile(srcFile, dstFile string) {
-	s.logger.Infof("CopyFile: %s => %s", srcFile, dstFile)
+	s.logger.Infof("CopyFile: %s => %s", srcFile, filepath.Join(s.subDir, dstFile))
 
 	srcFile, err := utils.ExpandUser(srcFile)
 	if err != nil {
@@ -125,7 +140,7 @@ func (s *ScriptObject) CopyFile(srcFile, dstFile string) {
 }
 
 func (s *ScriptObject) CopyDir(srcDir, dstDir string) {
-	s.logger.Infof("CopyDir: %s => %s", srcDir, dstDir)
+	s.logger.Infof("CopyDir: %s => %s", srcDir, filepath.Join(s.subDir, dstDir))
 
 	srcDir, err := utils.ExpandUser(srcDir)
 	if err != nil {
@@ -149,7 +164,7 @@ func (s *ScriptObject) CopyDir(srcDir, dstDir string) {
 }
 
 func (s *ScriptObject) CopyDirEx(srcDir, dstDir string, excludes []string) {
-	s.logger.Infof("CopyDirEx: %s => %s", srcDir, dstDir)
+	s.logger.Infof("CopyDirEx: %s => %s", srcDir, filepath.Join(s.subDir, dstDir))
 
 	srcDir, err := utils.ExpandUser(srcDir)
 	if err != nil {
@@ -174,7 +189,7 @@ func (s *ScriptObject) CopyDirEx(srcDir, dstDir string, excludes []string) {
 
 func (s *ScriptObject) ExportRegistry(key, dstFile string) {
 	key = strings.ReplaceAll(key, `/`, `\`)
-	s.logger.Infof("ExportRegistry: %s => %s", key, dstFile)
+	s.logger.Infof("ExportRegistry: %s => %s", key, filepath.Join(s.subDir, dstFile))
 
 	dstFile = filepath.Join(s.currentDir, dstFile)
 	err := utils.MakeParentDir(dstFile)

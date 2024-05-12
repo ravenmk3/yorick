@@ -12,8 +12,10 @@ var taskEnd = Y.TaskEnd;
 var destDir = Y.DestDir;
 var isDir = Y.IsDir;
 var isFile = Y.IsFile;
+var fileExt = Y.FileExt;
 var listDirs = Y.ListDirs;
 var listFiles = Y.ListFiles;
+var findLatestFile = Y.FindLatestFile;
 
 var copyFile = Y.CopyFile;
 var copyDir = Y.CopyDir;
