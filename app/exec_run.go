@@ -18,15 +18,26 @@ func ExecRunScript(scriptFile, outputDir string) error {
 	}
 	script := string(content)
 
-	so := core.NewScriptObject(outputDir)
-
 	vm := otto.New()
-	err = vm.Set("Y", so)
+	fo := core.NewFunctionsObject(vm)
+	so := core.NewScriptObject(vm, outputDir)
+
+	err = fo.RegisterFuncs()
+	if err != nil {
+		return err
+	}
+
+	err = so.RegisterFuncs()
 	if err != nil {
 		return err
 	}
 
 	_, err = vm.Run(core.InitScript + script)
+	if err != nil {
+		return err
+	}
+
+	err = so.ExecTasks()
 	if err != nil {
 		return err
 	}

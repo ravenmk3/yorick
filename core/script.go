@@ -1,118 +1,67 @@
 package core
 
 import (
-	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/robertkrimen/otto"
 	"github.com/sirupsen/logrus"
 	"yorick/utils"
 )
 
+const (
+	RegKeySystemEnv = `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Environment`
+	RegKeyUserEnv   = `HKEY_CURRENT_USER\Environment`
+)
+
 type ScriptObject struct {
 	logger     *logrus.Logger
+	vm         *otto.Otto
 	outputDir  string
 	subDir     string
 	currentDir string
-	taskBegun  bool
-	taskName   string
+	tasks      []*TaskInfo
 }
 
-func NewScriptObject(outputDir string) *ScriptObject {
+func NewScriptObject(vm *otto.Otto, outputDir string) *ScriptObject {
 	return &ScriptObject{
 		logger:     logrus.StandardLogger(),
+		vm:         vm,
 		outputDir:  outputDir,
+		subDir:     ".",
 		currentDir: outputDir,
+		tasks:      []*TaskInfo{},
 	}
 }
 
-func (s *ScriptObject) Format(format string, a ...any) string {
-	return fmt.Sprintf(format, a...)
+func (s *ScriptObject) DefineTask(name string, value *otto.Value) {
+	task := &TaskInfo{
+		Name: name,
+		dir:  name,
+		fn:   value,
+	}
+	s.tasks = append(s.tasks, task)
 }
 
-func (s *ScriptObject) LogInfo(format string, args ...any) {
-	logrus.Infof(format, args...)
-}
-
-func (s *ScriptObject) LogWarn(format string, args ...any) {
-	logrus.Warnf(format, args...)
-}
-
-func (s *ScriptObject) LogError(format string, args ...any) {
-	logrus.Errorf(format, args...)
-}
-
-func (s *ScriptObject) GetEnv(key string) string {
-	return os.Getenv(key)
-}
-
-func (s *ScriptObject) TaskBegin(name string, dir string) {
-	s.taskBegun = true
-	s.taskName = name
-	s.logger.Infof("Task begin: %s", s.taskName)
-	s.DestDir(dir)
-}
-
-func (s *ScriptObject) TaskEnd() {
-	s.taskBegun = false
-	s.taskName = ""
+func (s *ScriptObject) ExecTasks() error {
+	count := len(s.tasks)
+	for i, task := range s.tasks {
+		n := i + 1
+		s.logger.Infof("[%d/%d] Task: %s", n, count, task.Name)
+		c := NewTaskContext(task)
+		_, err := task.fn.Call(otto.NullValue(), c)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *ScriptObject) DestDir(dir string) {
 	s.subDir = dir
 	s.currentDir = filepath.Join(s.outputDir, dir)
-	s.logger.Infof("Destination directory: %s", s.currentDir)
-}
-
-func (s *ScriptObject) IsDir(name string) bool {
-	isDir, err := utils.IsDir(name)
-	if err != nil {
-		s.logger.Warnf("IsDir: %s", err.Error())
-		return false
-	}
-	return isDir
-}
-
-func (s *ScriptObject) IsFile(name string) bool {
-	isFile, err := utils.IsFile(name)
-	if err != nil {
-		s.logger.Warnf("IsFile: %s", err.Error())
-		return false
-	}
-	return isFile
-}
-
-func (s *ScriptObject) FileExt(path string) string {
-	return filepath.Ext(path)
-}
-
-func (s *ScriptObject) ListDirs(dir string, relative bool, maxDepth int) []string {
-	files, err := utils.ListDirs(dir, relative, maxDepth)
-	if err != nil {
-		s.logger.Warnf("ListDirs: %s", err.Error())
-		return nil
-	}
-	return files
-}
-
-func (s *ScriptObject) ListFiles(dir string, relative bool, maxDepth int) []string {
-	files, err := utils.ListFiles(dir, relative, maxDepth)
-	if err != nil {
-		s.logger.Warnf("ListFiles: %s", err.Error())
-		return nil
-	}
-	return files
-}
-
-func (s *ScriptObject) FindLatestFile(dir string, relative bool, maxDepth int) string {
-	file, err := utils.FindLatestFile(dir, relative, maxDepth)
-	if err != nil {
-		s.logger.Fatal("FindLatestFile: %s", err.Error())
-		return ""
-	}
-	return file
+	s.logger.Infof("Destination: %s", s.currentDir)
 }
 
 func (s *ScriptObject) CopyFile(srcFile, dstFile string) {
@@ -202,4 +151,46 @@ func (s *ScriptObject) ExportRegistry(key, dstFile string) {
 	if err != nil {
 		s.logger.Fatal(err)
 	}
+}
+
+func (s *ScriptObject) PutHostsFile() {
+	srcFile := utils.HostsFilePath
+	dstFile := "hosts"
+	s.logger.Infof("PutHostsFile: %s => %s", srcFile, dstFile)
+	dstFile = filepath.Join(s.currentDir, dstFile)
+	err := utils.SafeCopyFile(srcFile, dstFile)
+	if err != nil {
+		s.logger.Fatal(err)
+	}
+}
+
+func (s *ScriptObject) ExportRegSystemEnv(dstFile string) {
+	s.ExportRegistry(RegKeySystemEnv, dstFile)
+}
+
+func (s *ScriptObject) ExportRegUserEnv(dstFile string) {
+	s.ExportRegistry(RegKeyUserEnv, dstFile)
+}
+
+func (s *ScriptObject) RegisterFuncs() error {
+	funcs := map[string]any{
+		"task":               s.DefineTask,
+		"destDir":            s.DestDir,
+		"copyFile":           s.CopyFile,
+		"copyDir":            s.CopyDir,
+		"copyDirEx":          s.CopyDirEx,
+		"exportRegistry":     s.ExportRegistry,
+		"exportReg":          s.ExportRegistry,
+		"putHostsFile":       s.PutHostsFile,
+		"exportRegSystemEnv": s.ExportRegSystemEnv,
+		"exportRegUserEnv":   s.ExportRegUserEnv,
+	}
+
+	for name, fn := range funcs {
+		err := s.vm.Set(name, fn)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
