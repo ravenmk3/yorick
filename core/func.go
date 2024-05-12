@@ -105,7 +105,7 @@ func (o *FunctionsObject) RegisterFuncs() error {
 		"logInfo":        o.LogInfo,
 		"logWarn":        o.LogWarn,
 		"logError":       o.LogError,
-		"fetEnv":         o.GetEnv,
+		"getEnv":         o.GetEnv,
 		"isDir":          o.IsDir,
 		"isFile":         o.IsFile,
 		"fileExt":        o.FileExt,

@@ -52,7 +52,7 @@ func (s *ScriptObject) ExecTasks() error {
 		c := NewTaskContext(task)
 		_, err := task.fn.Call(otto.NullValue(), c)
 		if err != nil {
-			return err
+			s.logger.Error(err.Error())
 		}
 	}
 	return nil
