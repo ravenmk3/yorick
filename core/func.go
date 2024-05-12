@@ -91,6 +91,14 @@ func (o *FunctionsObject) FindLatestFile(dir string, relative bool, maxDepth int
 	return file
 }
 
+func (o *FunctionsObject) ReadIni(path string) utils.IniDict {
+	dict, err := utils.ReadIniAsDict(path)
+	if err != nil {
+		o.logger.Fatalf("ReadIni: %s", err.Error())
+	}
+	return dict
+}
+
 func (o *FunctionsObject) RegisterFuncs() error {
 	funcs := map[string]any{
 		"format":         o.Format,
@@ -104,6 +112,7 @@ func (o *FunctionsObject) RegisterFuncs() error {
 		"listDirs":       o.ListDirs,
 		"listFiles":      o.ListFiles,
 		"findLatestFile": o.FindLatestFile,
+		"readIni":        o.ReadIni,
 	}
 
 	for name, fn := range funcs {
