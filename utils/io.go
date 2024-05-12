@@ -8,14 +8,11 @@ import (
 )
 
 func ExpandUser(path string) (string, error) {
-	if !strings.HasPrefix(path, "~") {
-		return path, nil
-	}
 	dir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	path = dir + path[1:]
+	path = strings.ReplaceAll(path, "~", dir)
 	return path, nil
 }
 
