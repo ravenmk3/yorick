@@ -64,6 +64,19 @@ func (o *FunctionsObject) FileExt(path string) string {
 	return filepath.Ext(path)
 }
 
+func (o *FunctionsObject) AbsPath(path string) string {
+	path, err := filepath.Abs(path)
+	if err != nil {
+		o.logger.Fatal(err)
+		return path
+	}
+	return path
+}
+
+func (o *FunctionsObject) IsAbsPath(path string) bool {
+	return filepath.IsAbs(path)
+}
+
 func (o *FunctionsObject) ListDirs(dir string, relative bool, maxDepth int) []string {
 	files, err := utils.ListDirs(dir, relative, maxDepth)
 	if err != nil {
@@ -109,6 +122,8 @@ func (o *FunctionsObject) RegisterFuncs() error {
 		"isDir":          o.IsDir,
 		"isFile":         o.IsFile,
 		"fileExt":        o.FileExt,
+		"absPath":        o.AbsPath,
+		"isAbsPath":      o.IsAbsPath,
 		"listDirs":       o.ListDirs,
 		"listFiles":      o.ListFiles,
 		"findLatestFile": o.FindLatestFile,

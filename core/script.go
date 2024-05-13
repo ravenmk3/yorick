@@ -149,7 +149,7 @@ func (s *ScriptObject) ExportRegistry(key, dstFile string) {
 	cmd := exec.Command("reg", "export", key, dstFile, "/y")
 	err = cmd.Run()
 	if err != nil {
-		s.logger.Fatal(err)
+		s.logger.Errorf("reg export error: %s", err.Error())
 	}
 }
 
